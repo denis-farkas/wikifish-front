@@ -136,6 +136,13 @@ const BackTemperament = () => {
           )}
         </tbody>
       </table>
+      <Link
+        to={"/backOffice"}
+        className="btn btn-secondary my-4 mx-auto"
+        aria-label="Retour à la page d'accueil de l'administration"
+      >
+        Retour à l'accueil
+      </Link>
     </div>
   );
 };

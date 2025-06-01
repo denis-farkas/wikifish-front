@@ -72,8 +72,8 @@ const BackHabitat = () => {
     }
   };
   return (
-    <div className="main text-center">
-      <h1>Familles</h1>
+    <div className="main ">
+      <h1 class="text-center">Habitats</h1>
       <Link to="/backHabitat/create" className="btn btn-success my-4 ">
         Créer habitat
       </Link>
@@ -130,6 +130,13 @@ const BackHabitat = () => {
           )}
         </tbody>
       </table>
+      <Link
+        to={"/backOffice"}
+        className="btn btn-secondary my-4 mx-auto"
+        aria-label="Retour à la page d'accueil de l'administration"
+      >
+        Retour à l'accueil
+      </Link>
     </div>
   );
 };
