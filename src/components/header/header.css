@@ -1,0 +1,24 @@
+a.nav-link {
+  color: rgb(43, 176, 227) !important;
+  margin-left: 50px;
+}
+
+a.nav-link.active {
+  color: rgb(26, 118, 155);
+}
+
+.logo-title {
+  color: rgb(43, 176, 227);
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-decoration: none;
+  margin-left: 20px;
+}
+
+.dropdown-menu {
+  background-color: rgb(43, 176, 227);
+}
+.dropdown-menu a {
+  color: white !important;
+  margin-left: 10px;
+}

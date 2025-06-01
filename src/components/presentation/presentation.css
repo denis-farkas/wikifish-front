@@ -1,0 +1,81 @@
+.presentation.container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.presentation .left {
+  flex: 1 1 300px;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.blue-hello {
+  color: #0078d4;
+  font-weight: bold;
+  font-size: 18px;
+  text-transform: capitalize;
+}
+.green-hello {
+  color: #42c442;
+  font-weight: bold;
+  font-size: 18px;
+  text-transform: capitalize;
+}
+
+.presentation .title {
+  font-size: 2rem;
+  margin: 0;
+  color: #0078d4;
+}
+
+.presentation .button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background: #0078d4;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.presentation .button:hover {
+  background: #106ebe;
+  transition: background-color 0.3s ease;
+}
+
+.presentation .right {
+  flex: 1 1 350px;
+  min-width: 250px;
+  display: flex;
+  justify-content: center;
+}
+
+.presentation .image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .presentation.container {
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1.5rem;
+  }
+
+  .presentation .left {
+    text-align: center;
+  }
+
+  .presentation .title {
+    font-size: 1.5rem;
+  }
+}

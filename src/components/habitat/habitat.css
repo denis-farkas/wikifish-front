@@ -1,0 +1,45 @@
+.habitat-card {
+  width: 350px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin: 12px 0;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.habitat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-body {
+  padding: 5px 0;
+}
+
+.card-title {
+  color: #2c3e50;
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.card-text {
+  color: #5d6778;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Loading and error states */
+.habitat-card:empty,
+.habitat-card:only-child {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+  font-style: italic;
+  color: #6c757d;
+}
