@@ -42,8 +42,8 @@ const BackContribution = () => {
       });
   }, []);
 
-  const handleValidateClick = (contributionId) => {
-    logger.info("Admin navigating to validate contribution", {
+  const handleViewClick = (contributionId) => {
+    logger.info("Admin navigating to view contribution", {
       contribution_id: contributionId,
     });
   };
@@ -54,6 +54,7 @@ const BackContribution = () => {
 
   return (
     <div className="main">
+      <h1>Contributions</h1>
       <table className="table">
         <thead>
           <tr>
@@ -67,15 +68,18 @@ const BackContribution = () => {
               Date création
             </th>
             <th
-              style={{ width: "20%" }}
+              style={{ width: "15%" }}
               aria-label="validation de la contribution"
             >
               Validation
             </th>
-            <th style={{ width: "20%" }} aria-label="nom commun">
+            <th style={{ width: "25%" }} aria-label="nom commun">
               Nom commun
             </th>
-            <th style={{ width: "20%" }} aria-label="Actions">
+            <th style={{ width: "20%" }} aria-label="Utilisateur">
+              Utilisateur
+            </th>
+            <th style={{ width: "15%" }} aria-label="Actions">
               Action
             </th>
           </tr>
@@ -85,19 +89,32 @@ const BackContribution = () => {
             contributions.map((contribution) => (
               <tr key={contribution.id_contribution}>
                 <td>{contribution.id_contribution}</td>
-                <td>{contribution.date_creation}</td>
-                <td>{contribution.validation}</td>
+                <td>
+                  {new Date(contribution.date_creation).toLocaleDateString()}
+                </td>
+                <td>
+                  <span
+                    className={`badge ${
+                      contribution.validation === 1
+                        ? "bg-success"
+                        : "bg-warning"
+                    }`}
+                  >
+                    {contribution.validation === 1 ? "Validée" : "En attente"}
+                  </span>
+                </td>
                 <td>{contribution.nom_commun}</td>
+                <td>{contribution.user_id || "N/A"}</td>
                 <td>
                   <Link
-                    to={`/backContribution/validate/${contribution.id_contribution}`}
-                    className="btn btn-primary"
-                    aria-label="Valider la contribution"
+                    to={`/backContribution/view/${contribution.id_contribution}`}
+                    className="btn btn-primary btn-sm"
+                    aria-label="Voir la contribution"
                     onClick={() =>
-                      handleValidateClick(contribution.id_contribution)
+                      handleViewClick(contribution.id_contribution)
                     }
                   >
-                    Valider
+                    Voir
                   </Link>
                 </td>
               </tr>
@@ -105,7 +122,7 @@ const BackContribution = () => {
 
           {contributions && !contributions.length && (
             <tr>
-              <td colSpan="5">
+              <td colSpan="6">
                 <p>Pas de contribution à afficher</p>
               </td>
             </tr>

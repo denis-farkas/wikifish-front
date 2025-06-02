@@ -21,7 +21,7 @@ import CommentaireUpdate from "./pages/commentaire/update";
 import BackContribution from "./pages/backContribution";
 import Contribution from "./pages/contribution";
 import EditContribution from "./pages/contribution/update";
-import ValidateContribution from "./pages/backContribution/validate";
+import BackContributionView from "./pages/backContribution/view";
 
 import BackEspece from "./pages/backEspece";
 import BackEspeceCreate from "./pages/backEspece/create";
@@ -140,10 +140,10 @@ function App() {
                 }
               />
               <Route
-                path="/backContribution/validate/:id_contribution"
+                path="/backContribution/view/:id_contribution"
                 element={
                   <ProtectedRoute>
-                    <ValidateContribution />
+                    <BackContributionView />
                   </ProtectedRoute>
                 }
               />
