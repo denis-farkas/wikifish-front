@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { generateDateTime } from "../../../utils/generateDate";
+import { logger } from "../../../services/logger.service.js";
 
 const BackEspeceCreate = () => {
   let actualUser = JSON.parse(localStorage.getItem("user"));
@@ -21,10 +22,14 @@ const BackEspeceCreate = () => {
   const [loading, setLoading] = useState(false);
 
   // Cloudinary configuration
-  const CLOUDINARY_UPLOAD_PRESET = "wiki_fish"; // Create this in your Cloudinary dashboard
-  const CLOUDINARY_CLOUD_NAME = "dfmbhkfao"; // Replace with your Cloudinary cloud name
+  const CLOUDINARY_UPLOAD_PRESET = "wiki_fish";
+  const CLOUDINARY_CLOUD_NAME = "dfmbhkfao";
 
   useEffect(() => {
+    logger.info("BackEspeceCreate component mounted", {
+      admin_id: actualUser?.userId,
+    });
+
     const API_URL = import.meta.env.VITE_API_URL;
 
     // Fetch all reference data in parallel for better performance
@@ -37,8 +42,17 @@ const BackEspeceCreate = () => {
         setTemperaments(tempResponse.data.temperaments);
         setFamilles(familleResponse.data.familles);
         setHabitats(habitatResponse.data.habitats);
+        logger.info("Reference data loaded for species creation", {
+          temperaments_count: tempResponse.data.temperaments?.length || 0,
+          families_count: familleResponse.data.familles?.length || 0,
+          habitats_count: habitatResponse.data.habitats?.length || 0,
+        });
       })
       .catch((error) => {
+        logger.error("Failed to load reference data for species creation", {
+          error: error.message,
+          status: error.response?.status,
+        });
         console.error("Error fetching reference data:", error);
         toast.error("Erreur lors du chargement des données de référence");
       });
@@ -55,10 +69,14 @@ const BackEspeceCreate = () => {
   const handleImageChange = (e, setPreview, setFile) => {
     const file = e.target.files[0];
     if (file) {
-      // Store the file for later upload to Cloudinary
+      logger.debug("Image selected for species creation", {
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+      });
+
       setFile(file);
 
-      // Create preview for UI
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result);
@@ -77,16 +95,29 @@ const BackEspeceCreate = () => {
     formData.append("folder", "fish_species");
 
     try {
+      logger.debug("Starting image upload to Cloudinary", {
+        file_name: file.name,
+      });
+
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
         formData
       );
+
+      logger.info("Image uploaded successfully to Cloudinary", {
+        public_id: response.data.public_id,
+        secure_url: response.data.secure_url,
+      });
 
       return {
         public_id: response.data.public_id,
         secure_url: response.data.secure_url,
       };
     } catch (error) {
+      logger.error("Failed to upload image to Cloudinary", {
+        file_name: file.name,
+        error: error.message,
+      });
       console.error("Error uploading to Cloudinary:", error);
       throw new Error("Failed to upload image");
     }
@@ -97,6 +128,14 @@ const BackEspeceCreate = () => {
 
     if (actualUser !== undefined && actualUser.role === "admin") {
       try {
+        logger.info("Admin starting species creation", {
+          species_name: espece.nom_commun,
+          admin_id: actualUser.userId,
+          has_image1: !!imageFile1,
+          has_image2: !!imageFile2,
+          has_image3: !!imageFile3,
+        });
+
         setLoading(true);
         toast.info("Chargement des images en cours...");
 
@@ -105,7 +144,6 @@ const BackEspeceCreate = () => {
         let image2Url = null;
         let image3Url = null;
 
-        // Only upload files that exist
         if (imageFile1) {
           const image1Result = await uploadToCloudinary(imageFile1);
           image1Url = image1Result.secure_url;
@@ -135,7 +173,6 @@ const BackEspeceCreate = () => {
           id_famille: espece.id_famille,
           id_habitat: espece.id_habitat,
           cree_le: generateDateTime(),
-          // Use Cloudinary URLs
           image_1: image1Url,
           image_2: image2Url,
           image_3: image3Url,
@@ -153,12 +190,27 @@ const BackEspeceCreate = () => {
         });
 
         if (response.status === 201) {
+          logger.info("Species created successfully by admin", {
+            species_name: espece.nom_commun,
+            species_id: response.data?.id_espece,
+            admin_id: actualUser.userId,
+            images_uploaded: [image1Url, image2Url, image3Url].filter(Boolean)
+              .length,
+          });
+
           toast.success("Création effectuée avec succès");
           setTimeout(() => {
             navigate("/backEspece");
           }, 1500);
         }
       } catch (error) {
+        logger.error("Failed to create species", {
+          species_name: espece.nom_commun,
+          error: error.message,
+          status: error.response?.status,
+          admin_id: actualUser.userId,
+        });
+
         console.error("Error creating species:", error);
         const errorMessage = error.response
           ? error.response.data.message || "Une erreur est survenue"
@@ -168,6 +220,11 @@ const BackEspeceCreate = () => {
         setLoading(false);
       }
     } else {
+      logger.warn("Unauthorized attempt to create species", {
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       toast.error("Vous ne disposez pas des droits pour cette création");
       navigate("/home");
     }

@@ -2,12 +2,17 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { logger } from "../../../services/logger.service.js";
 
 const BackHabitatCreate = () => {
   let actualUser = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
-  const [habitat, setHabitat] = useState();
+  const [habitat, setHabitat] = useState({});
+
+  logger.info("BackHabitatCreate component mounted", {
+    admin_id: actualUser?.userId,
+  });
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -16,12 +21,23 @@ const BackHabitatCreate = () => {
       ...prevData,
       [name]: value,
     }));
-    console.log(habitat);
+
+    logger.debug("Admin editing habitat form", {
+      field: name,
+      value: value,
+      admin_id: actualUser?.userId,
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (actualUser !== undefined && actualUser.role === "admin") {
+      logger.info("Admin starting habitat creation", {
+        habitat_name: habitat.libelle,
+        admin_id: actualUser.userId,
+      });
+
       const API_URL = import.meta.env.VITE_API_URL;
       let data = {
         libelle: habitat.libelle,
@@ -45,8 +61,13 @@ const BackHabitatCreate = () => {
       axios
         .request(config)
         .then((response) => {
-          console.log(response);
           if (response.status === 201) {
+            logger.info("Habitat created successfully by admin", {
+              habitat_name: habitat.libelle,
+              habitat_id: response.data?.id_habitat,
+              admin_id: actualUser.userId,
+            });
+
             toast.success("Création effectuée avec succès");
             setTimeout(() => {
               navigate("/backHabitat");
@@ -57,9 +78,22 @@ const BackHabitatCreate = () => {
           const errorMessage = error.response
             ? error.response.data.message || "An error occurred"
             : "An error occurred";
+
+          logger.error("Failed to create habitat", {
+            habitat_name: habitat.libelle,
+            error: errorMessage,
+            status: error.response?.status,
+            admin_id: actualUser.userId,
+          });
+
           toast.error(errorMessage);
         });
     } else {
+      logger.warn("Unauthorized attempt to create habitat", {
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       const errorMessage =
         "Vous ne disposez pas des droits pour cette modification";
       toast.error(errorMessage);
@@ -68,7 +102,7 @@ const BackHabitatCreate = () => {
   };
 
   return (
-    <div className="main ">
+    <div className="main">
       <div className="text-center py-4">
         <h2>Nouvel Habitat</h2>
       </div>

@@ -2,12 +2,17 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { logger } from "../../../services/logger.service.js";
 
 const BackTemperamentCreate = () => {
   let actualUser = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
-  const [temperament, setTemperament] = useState();
+  const [temperament, setTemperament] = useState({});
+
+  logger.info("BackTemperamentCreate component mounted", {
+    admin_id: actualUser?.userId,
+  });
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -16,12 +21,23 @@ const BackTemperamentCreate = () => {
       ...prevData,
       [name]: value,
     }));
-    console.log(temperament);
+
+    logger.debug("Admin editing temperament form", {
+      field: name,
+      value: value,
+      admin_id: actualUser?.userId,
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (actualUser !== undefined && actualUser.role === "admin") {
+      logger.info("Admin starting temperament creation", {
+        temperament_name: temperament.libelle,
+        admin_id: actualUser.userId,
+      });
+
       const API_URL = import.meta.env.VITE_API_URL;
       let data = {
         libelle: temperament.libelle,
@@ -44,8 +60,13 @@ const BackTemperamentCreate = () => {
       axios
         .request(config)
         .then((response) => {
-          console.log(response);
           if (response.status === 201) {
+            logger.info("Temperament created successfully by admin", {
+              temperament_name: temperament.libelle,
+              temperament_id: response.data?.id_temperament,
+              admin_id: actualUser.userId,
+            });
+
             toast.success("Création effectuée avec succès");
             setTimeout(() => {
               navigate("/backTemperament");
@@ -56,9 +77,22 @@ const BackTemperamentCreate = () => {
           const errorMessage = error.response
             ? error.response.data.message || "An error occurred"
             : "An error occurred";
+
+          logger.error("Failed to create temperament", {
+            temperament_name: temperament.libelle,
+            error: errorMessage,
+            status: error.response?.status,
+            admin_id: actualUser.userId,
+          });
+
           toast.error(errorMessage);
         });
     } else {
+      logger.warn("Unauthorized attempt to create temperament", {
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       const errorMessage =
         "Vous ne disposez pas des droits pour cette modification";
       toast.error(errorMessage);

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
+import { logger } from "../../../services/logger.service.js";
 
 const BackHabitatUpdate = () => {
   const { id_habitat } = useParams();
@@ -12,6 +13,11 @@ const BackHabitatUpdate = () => {
   const [habitat, setHabitat] = useState();
 
   useEffect(() => {
+    logger.info("BackHabitatUpdate component mounted", {
+      habitat_id: id_habitat,
+      admin_id: actualUser?.userId,
+    });
+
     let config = {
       method: "get",
       maxBodyLength: Infinity,
@@ -20,30 +26,55 @@ const BackHabitatUpdate = () => {
         "Content-Type": "application/json",
       },
     };
+
     axios
       .request(config)
       .then((response) => {
-        console.log(response);
         setHabitat(response.data.habitat);
+        logger.info("Habitat data loaded for editing", {
+          habitat_id: id_habitat,
+          habitat_name: response.data.habitat?.libelle,
+        });
       })
       .catch((error) => {
+        logger.error("Failed to load habitat data for editing", {
+          habitat_id: id_habitat,
+          error: error.message,
+          status: error.response?.status,
+        });
         console.log(error);
+        toast.error("Erreur lors du chargement de l'habitat");
       });
   }, [id_habitat]);
 
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "libelle") {
+      logger.debug("Admin changing habitat name", {
+        habitat_id: id_habitat,
+        old_value: habitat?.libelle,
+        new_value: value,
+      });
+    }
+
     setHabitat((prevData) => ({
       ...prevData,
       [name]: value,
     }));
-    console.log(habitat);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (actualUser !== undefined && actualUser.role === "admin") {
+      logger.info("Admin starting habitat update", {
+        habitat_id: id_habitat,
+        habitat_name: habitat.libelle,
+        admin_id: actualUser.userId,
+      });
+
       const API_URL = import.meta.env.VITE_API_URL;
       let data = {
         id_habitat: habitat.id_habitat,
@@ -67,8 +98,13 @@ const BackHabitatUpdate = () => {
       axios
         .request(config)
         .then((response) => {
-          console.log(response);
           if (response.status === 200) {
+            logger.info("Habitat updated successfully by admin", {
+              habitat_id: id_habitat,
+              habitat_name: habitat.libelle,
+              admin_id: actualUser.userId,
+            });
+
             toast.success("Modification validée");
             setTimeout(() => {
               navigate("/backHabitat");
@@ -79,9 +115,24 @@ const BackHabitatUpdate = () => {
           const errorMessage = error.response
             ? error.response.data.message || "An error occurred"
             : "An error occurred";
+
+          logger.error("Failed to update habitat", {
+            habitat_id: id_habitat,
+            habitat_name: habitat.libelle,
+            error: errorMessage,
+            status: error.response?.status,
+            admin_id: actualUser.userId,
+          });
+
           toast.error(errorMessage);
         });
     } else {
+      logger.warn("Unauthorized attempt to modify habitat", {
+        habitat_id: id_habitat,
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       const errorMessage =
         "Vous ne disposez pas des droits pour cette modification";
       toast.error(errorMessage);

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
+import { logger } from "../../../services/logger.service.js";
 
 const CommentaireUpdate = () => {
   const { id_commentaire } = useParams();
@@ -13,6 +14,11 @@ const CommentaireUpdate = () => {
   useEffect(() => {
     // Déplacer actualUser DANS le useEffect pour éviter les re-renders
     const actualUser = JSON.parse(localStorage.getItem("user"));
+
+    logger.info("CommentaireUpdate component mounted - User editing comment", {
+      comment_id: id_commentaire,
+      user_id: actualUser?.userId,
+    });
 
     const fetchCommentaire = async () => {
       try {
@@ -26,14 +32,26 @@ const CommentaireUpdate = () => {
         };
 
         const response = await axios.request(config);
-        console.log(response);
         setCommentaire(response.data.commentaire);
+
+        logger.info("Comment data loaded for editing", {
+          comment_id: id_commentaire,
+          species_id: response.data.commentaire?.id_espece,
+          original_rating: response.data.commentaire?.note,
+          user_id: actualUser?.userId,
+        });
 
         // Vérification des droits APRÈS avoir récupéré les données
         if (
           !actualUser ||
           actualUser.userId !== response.data.commentaire.user_id
         ) {
+          logger.warn("Unauthorized attempt to edit comment", {
+            comment_id: id_commentaire,
+            comment_owner: response.data.commentaire.user_id,
+            attempted_by: actualUser?.userId,
+          });
+
           toast.error(
             "Vous ne disposez pas des droits pour cette modification"
           );
@@ -41,6 +59,13 @@ const CommentaireUpdate = () => {
           return;
         }
       } catch (error) {
+        logger.error("Failed to load comment data for editing", {
+          comment_id: id_commentaire,
+          error: error.message,
+          status: error.response?.status,
+          user_id: actualUser?.userId,
+        });
+
         console.log(error);
         toast.error("Erreur lors du chargement du commentaire");
         navigate("/home");
@@ -50,11 +75,21 @@ const CommentaireUpdate = () => {
     };
 
     fetchCommentaire();
-  }, [id_commentaire, navigate]); // Retirer actualUser des dépendances
+  }, [id_commentaire, navigate]);
 
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "note") {
+      logger.debug("User changing comment rating", {
+        comment_id: id_commentaire,
+        old_rating: commentaire?.note,
+        new_rating: value,
+        user_id: JSON.parse(localStorage.getItem("user"))?.userId,
+      });
+    }
+
     setCommentaire((prevData) => ({
       ...prevData,
       [name]: value,
@@ -69,10 +104,24 @@ const CommentaireUpdate = () => {
 
     // Vérification supplémentaire lors de la soumission
     if (!actualUser || actualUser.userId !== commentaire?.user_id) {
+      logger.warn("Unauthorized attempt to submit comment update", {
+        comment_id: id_commentaire,
+        comment_owner: commentaire?.user_id,
+        attempted_by: actualUser?.userId,
+      });
+
       toast.error("Vous ne disposez pas des droits pour cette modification");
       navigate("/home");
       return;
     }
+
+    logger.info("User submitting comment update", {
+      comment_id: id_commentaire,
+      species_id: commentaire.id_espece,
+      new_rating: commentaire.note,
+      comment_length: commentaire.commentaire?.length || 0,
+      user_id: actualUser.userId,
+    });
 
     const API_URL = import.meta.env.VITE_API_URL;
 
@@ -99,8 +148,15 @@ const CommentaireUpdate = () => {
     axios
       .request(config)
       .then((response) => {
-        console.log(response);
         if (response.status === 200) {
+          logger.info("Comment updated successfully by user", {
+            comment_id: id_commentaire,
+            species_id: commentaire.id_espece,
+            new_rating: commentaire.note,
+            user_id: actualUser.userId,
+            awaiting_validation: true,
+          });
+
           toast.success("Modification validée");
           setTimeout(() => {
             navigate("/espece/readOne/" + commentaire.id_espece);
@@ -111,6 +167,15 @@ const CommentaireUpdate = () => {
         const errorMessage = error.response
           ? error.response.data.message || "An error occurred"
           : "An error occurred";
+
+        logger.error("Failed to update comment", {
+          comment_id: id_commentaire,
+          species_id: commentaire.id_espece,
+          error: errorMessage,
+          status: error.response?.status,
+          user_id: actualUser.userId,
+        });
+
         toast.error(errorMessage);
       });
   };

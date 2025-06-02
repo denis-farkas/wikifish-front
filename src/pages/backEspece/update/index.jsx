@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import { generateDateTime } from "../../../utils/generateDate";
+import { logger } from "../../../services/logger.service.js";
 
 const BackEspeceUpdate = () => {
   const { id_espece } = useParams();
@@ -31,6 +32,11 @@ const BackEspeceUpdate = () => {
     "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM5OTk5OTkiPkltYWdlIG5vbiBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==";
 
   useEffect(() => {
+    logger.info("BackEspeceUpdate component mounted", {
+      species_id: id_espece,
+      admin_id: actualUser?.userId,
+    });
+
     const API_URL = import.meta.env.VITE_API_URL;
     const BASE_URL = API_URL.includes("/api")
       ? API_URL.split("/api")[0]
@@ -44,6 +50,14 @@ const BackEspeceUpdate = () => {
         );
         const especeData = especeResponse.data.espece;
         setEspece(especeData);
+
+        logger.info("Species data loaded for editing", {
+          species_id: id_espece,
+          species_name: especeData?.nom_commun,
+          has_image1: !!especeData?.image_1,
+          has_image2: !!especeData?.image_2,
+          has_image3: !!especeData?.image_3,
+        });
 
         // Set image previews for existing images
         if (especeData.image_1) {
@@ -83,8 +97,19 @@ const BackEspeceUpdate = () => {
         setFamilles(familleResponse.data.familles || []);
         setHabitats(habitatResponse.data.habitats || []);
 
+        logger.info("Reference data loaded for species editing", {
+          temperaments_count: tempResponse.data.temperaments?.length || 0,
+          families_count: familleResponse.data.familles?.length || 0,
+          habitats_count: habitatResponse.data.habitats?.length || 0,
+        });
+
         setLoading(false);
       } catch (error) {
+        logger.error("Failed to load species data for editing", {
+          species_id: id_espece,
+          error: error.message,
+          status: error.response?.status,
+        });
         console.error("Error fetching data:", error);
         toast.error("Erreur lors du chargement des données");
         setLoading(false);
@@ -106,6 +131,13 @@ const BackEspeceUpdate = () => {
   const handleImageChange = (e, setPreview, setFile) => {
     const file = e.target.files[0];
     if (file) {
+      logger.debug("New image selected for species update", {
+        species_id: id_espece,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+      });
+
       // Store the file for Cloudinary upload
       if (setFile) setFile(file);
 
@@ -128,9 +160,23 @@ const BackEspeceUpdate = () => {
     formData.append("folder", "fish_species");
 
     try {
+      logger.debug("Starting image upload to Cloudinary for species update", {
+        species_id: id_espece,
+        file_name: file.name,
+      });
+
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
         formData
+      );
+
+      logger.info(
+        "Image uploaded successfully to Cloudinary for species update",
+        {
+          species_id: id_espece,
+          public_id: response.data.public_id,
+          secure_url: response.data.secure_url,
+        }
       );
 
       return {
@@ -138,6 +184,11 @@ const BackEspeceUpdate = () => {
         secure_url: response.data.secure_url,
       };
     } catch (error) {
+      logger.error("Failed to upload image to Cloudinary for species update", {
+        species_id: id_espece,
+        file_name: file.name,
+        error: error.message,
+      });
       console.error("Error uploading to Cloudinary:", error);
       throw new Error("Failed to upload image");
     }
@@ -147,12 +198,27 @@ const BackEspeceUpdate = () => {
     e.preventDefault();
 
     if (!actualUser || actualUser.role !== "admin") {
+      logger.warn("Unauthorized attempt to update species", {
+        species_id: id_espece,
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       toast.error("Vous ne disposez pas des droits pour cette modification");
       navigate("/home");
       return;
     }
 
     try {
+      logger.info("Admin starting species update", {
+        species_id: id_espece,
+        species_name: espece.nom_commun,
+        admin_id: actualUser.userId,
+        has_new_image1: !!imageFile1,
+        has_new_image2: !!imageFile2,
+        has_new_image3: !!imageFile3,
+      });
+
       setUploading(true);
       toast.info("Mise à jour en cours...");
 
@@ -189,7 +255,6 @@ const BackEspeceUpdate = () => {
         id_temperament: espece.id_temperament || "",
         id_famille: espece.id_famille || "",
         id_habitat: espece.id_habitat || "",
-
         modifie_le: generateDateTime(),
         id_contribution_valide: espece.id_contribution_valide || "",
         // Use new Cloudinary URLs or keep existing ones
@@ -214,12 +279,28 @@ const BackEspeceUpdate = () => {
       });
 
       if (response.status === 200) {
+        logger.info("Species updated successfully by admin", {
+          species_id: id_espece,
+          species_name: espece.nom_commun,
+          admin_id: actualUser.userId,
+          images_updated: [imageFile1, imageFile2, imageFile3].filter(Boolean)
+            .length,
+        });
+
         toast.success("Modification effectuée avec succès");
         setTimeout(() => {
           navigate("/backEspece");
         }, 1500);
       }
     } catch (error) {
+      logger.error("Failed to update species", {
+        species_id: id_espece,
+        species_name: espece.nom_commun,
+        error: error.message,
+        status: error.response?.status,
+        admin_id: actualUser.userId,
+      });
+
       console.error("Update error:", error);
       const errorMessage = error.response
         ? error.response.data.message || "Une erreur est survenue"

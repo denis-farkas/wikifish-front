@@ -39,6 +39,7 @@ const SignIn = () => {
           userService.login(response.data.user);
           setEmail("");
           setMdp("");
+
           toast.success("Connecté");
           setTimeout(() => {
             navigate("/");
@@ -58,7 +59,7 @@ const SignIn = () => {
 
       <form className="formGroup" onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label className="form-label" for="email">
+          <label className="form-label" htmlFor="email">
             Email
           </label>
           <input

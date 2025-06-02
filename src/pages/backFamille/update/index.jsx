@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
+import { logger } from "../../../services/logger.service.js";
 
 const BackFamilleUpdate = () => {
   const { id_famille } = useParams();
@@ -12,6 +13,11 @@ const BackFamilleUpdate = () => {
   const [famille, setFamille] = useState();
 
   useEffect(() => {
+    logger.info("BackFamilleUpdate component mounted", {
+      family_id: id_famille,
+      admin_id: actualUser?.userId,
+    });
+
     const API_URL = import.meta.env.VITE_API_URL;
     let config = {
       method: "get",
@@ -21,12 +27,22 @@ const BackFamilleUpdate = () => {
         "Content-Type": "application/json",
       },
     };
+
     axios
       .request(config)
       .then((response) => {
         setFamille(response.data.famille);
+        logger.info("Family data loaded for editing", {
+          family_id: id_famille,
+          family_name: response.data.famille?.libelle,
+        });
       })
       .catch((error) => {
+        logger.error("Failed to load family data for editing", {
+          family_id: id_famille,
+          error: error.message,
+          status: error.response?.status,
+        });
         console.error("Error fetching famille:", error);
         toast.error("Erreur lors du chargement de la famille");
       });
@@ -35,6 +51,15 @@ const BackFamilleUpdate = () => {
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "libelle") {
+      logger.debug("Admin changing family name", {
+        family_id: id_famille,
+        old_value: famille?.libelle,
+        new_value: value,
+      });
+    }
+
     setFamille((prevData) => ({
       ...prevData,
       [name]: value,
@@ -43,7 +68,14 @@ const BackFamilleUpdate = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (actualUser !== undefined && actualUser.role === "admin") {
+      logger.info("Admin starting family update", {
+        family_id: id_famille,
+        family_name: famille.libelle,
+        admin_id: actualUser.userId,
+      });
+
       const API_URL = import.meta.env.VITE_API_URL;
       let data = {
         id_famille: famille.id_famille,
@@ -68,6 +100,12 @@ const BackFamilleUpdate = () => {
         .request(config)
         .then((response) => {
           if (response.status === 200) {
+            logger.info("Family updated successfully by admin", {
+              family_id: id_famille,
+              family_name: famille.libelle,
+              admin_id: actualUser.userId,
+            });
+
             toast.success("Modification validée");
             setTimeout(() => {
               navigate("/backFamille");
@@ -78,9 +116,24 @@ const BackFamilleUpdate = () => {
           const errorMessage = error.response
             ? error.response.data.message || "An error occurred"
             : "An error occurred";
+
+          logger.error("Failed to update family", {
+            family_id: id_famille,
+            family_name: famille.libelle,
+            error: errorMessage,
+            status: error.response?.status,
+            admin_id: actualUser.userId,
+          });
+
           toast.error(errorMessage);
         });
     } else {
+      logger.warn("Unauthorized attempt to modify family", {
+        family_id: id_famille,
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       const errorMessage =
         "Vous ne disposez pas des droits pour cette modification";
       toast.error(errorMessage);

@@ -2,12 +2,17 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { logger } from "../../../services/logger.service.js";
 
 const BackFamilleCreate = () => {
   let actualUser = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
-  const [famille, setFamille] = useState();
+  const [famille, setFamille] = useState({});
+
+  logger.info("BackFamilleCreate component mounted", {
+    admin_id: actualUser?.userId,
+  });
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -16,12 +21,23 @@ const BackFamilleCreate = () => {
       ...prevData,
       [name]: value,
     }));
-    console.log(famille);
+
+    logger.debug("Admin editing family form", {
+      field: name,
+      value: value,
+      admin_id: actualUser?.userId,
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (actualUser !== undefined && actualUser.role === "admin") {
+      logger.info("Admin starting family creation", {
+        family_name: famille.libelle,
+        admin_id: actualUser.userId,
+      });
+
       const API_URL = import.meta.env.VITE_API_URL;
       let data = {
         libelle: famille.libelle,
@@ -44,8 +60,13 @@ const BackFamilleCreate = () => {
       axios
         .request(config)
         .then((response) => {
-          console.log(response);
           if (response.status === 201) {
+            logger.info("Family created successfully by admin", {
+              family_name: famille.libelle,
+              family_id: response.data?.id_famille,
+              admin_id: actualUser.userId,
+            });
+
             toast.success("Création effectuée avec succès");
             setTimeout(() => {
               navigate("/backFamille");
@@ -56,9 +77,22 @@ const BackFamilleCreate = () => {
           const errorMessage = error.response
             ? error.response.data.message || "An error occurred"
             : "An error occurred";
+
+          logger.error("Failed to create family", {
+            family_name: famille.libelle,
+            error: errorMessage,
+            status: error.response?.status,
+            admin_id: actualUser.userId,
+          });
+
           toast.error(errorMessage);
         });
     } else {
+      logger.warn("Unauthorized attempt to create family", {
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       const errorMessage =
         "Vous ne disposez pas des droits pour cette modification";
       toast.error(errorMessage);

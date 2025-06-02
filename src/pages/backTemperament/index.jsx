@@ -2,12 +2,17 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { logger } from "../../services/logger.service.js";
 import "./backTemperament.css";
 
 const BackTemperament = () => {
   const [temperaments, setTemperaments] = useState(null);
-  console.log(temperaments);
+
   useEffect(() => {
+    logger.info(
+      "BackTemperament component mounted - Admin accessing temperaments management"
+    );
+
     let data;
 
     let config = {
@@ -24,8 +29,16 @@ const BackTemperament = () => {
       .request(config)
       .then((response) => {
         setTemperaments(response.data.temperaments);
+        logger.info("Temperaments loaded successfully for admin", {
+          count: response.data.temperaments?.length || 0,
+        });
       })
       .catch((error) => {
+        logger.error("Failed to load temperaments for admin", {
+          error: error.message,
+          status: error.response?.status,
+          url: config.url,
+        });
         console.log(error);
       });
   }, []);
@@ -35,9 +48,20 @@ const BackTemperament = () => {
       const actualUser = JSON.parse(localStorage.getItem("user"));
 
       if (!actualUser || actualUser.role !== "admin") {
+        logger.warn("Unauthorized attempt to delete temperament", {
+          temperament_id: id_temperament,
+          user_role: actualUser?.role,
+          user_id: actualUser?.userId,
+        });
+
         toast.error("Vous n'avez pas les droits pour effectuer cette action");
         return;
       }
+
+      logger.info("Admin starting temperament deletion", {
+        temperament_id: id_temperament,
+        admin_id: actualUser.userId,
+      });
 
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3009";
       const token = actualUser.token;
@@ -55,6 +79,11 @@ const BackTemperament = () => {
         .request(config)
         .then((response) => {
           if (response.status === 200) {
+            logger.info("Temperament deleted successfully by admin", {
+              temperament_id: id_temperament,
+              admin_id: actualUser.userId,
+            });
+
             toast.success("Temperament supprimé avec succès");
             // Update state to remove the deleted temperament
             setTemperaments(
@@ -65,6 +94,13 @@ const BackTemperament = () => {
           }
         })
         .catch((error) => {
+          logger.error("Failed to delete temperament", {
+            temperament_id: id_temperament,
+            error: error.message,
+            status: error.response?.status,
+            admin_id: actualUser.userId,
+          });
+
           console.error(error);
           const errorMessage = error.response
             ? error.response.data.message || "Une erreur est survenue"
@@ -74,10 +110,28 @@ const BackTemperament = () => {
     }
   };
 
+  const handleCreateClick = () => {
+    logger.info("Admin navigating to create new temperament");
+  };
+
+  const handleEditClick = (temperamentId) => {
+    logger.info("Admin navigating to edit temperament", {
+      temperament_id: temperamentId,
+    });
+  };
+
+  const handleBackToOffice = () => {
+    logger.info("Admin returning to back office from temperaments management");
+  };
+
   return (
     <div className="main">
       <h1>Tempéraments</h1>
-      <Link to="/backTemperament/create" className="btn btn-success my-4">
+      <Link
+        to="/backTemperament/create"
+        className="btn btn-success my-4"
+        onClick={handleCreateClick}
+      >
         Créer tempérament
       </Link>
       <table className="table">
@@ -86,7 +140,6 @@ const BackTemperament = () => {
             <th style={{ width: "5%" }} aria-label="Identifiant du temperament">
               Id
             </th>
-
             <th style={{ width: "30%" }} aria-label="Libellé du temperament">
               Libellé
             </th>
@@ -113,6 +166,7 @@ const BackTemperament = () => {
                     to={`/backTemperament/update/${temperament.id_temperament}`}
                     className="btn btn-primary"
                     aria-label="Editer le tempérament"
+                    onClick={() => handleEditClick(temperament.id_temperament)}
                   >
                     Editer
                   </Link>
@@ -129,7 +183,7 @@ const BackTemperament = () => {
 
           {temperaments && !temperaments.length && (
             <tr>
-              <td>
+              <td colSpan="4">
                 <p>Pas de temperament à afficher</p>
               </td>
             </tr>
@@ -140,6 +194,7 @@ const BackTemperament = () => {
         to={"/backOffice"}
         className="btn btn-secondary my-4 mx-auto"
         aria-label="Retour à la page d'accueil de l'administration"
+        onClick={handleBackToOffice}
       >
         Retour à l'accueil
       </Link>

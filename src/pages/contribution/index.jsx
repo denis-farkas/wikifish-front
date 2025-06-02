@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import { generateDateTime } from "../../utils/generateDate";
+import { logger } from "../../services/logger.service.js";
 
 const Contribution = () => {
   const { id_espece } = useParams();
@@ -49,6 +50,12 @@ const Contribution = () => {
   };
 
   useEffect(() => {
+    logger.info("Contribution component mounted - User creating contribution", {
+      species_id: id_espece,
+      user_id: actualUser?.userId,
+      user_role: actualUser?.role,
+    });
+
     const API_URL = import.meta.env.VITE_API_URL;
 
     // Fetch espece data
@@ -57,6 +64,12 @@ const Contribution = () => {
       .then((response) => {
         const especeData = response.data.espece;
         setEspece(especeData);
+
+        logger.info("Species data loaded for contribution", {
+          species_id: id_espece,
+          species_name: especeData?.nom_commun,
+          user_id: actualUser?.userId,
+        });
 
         // Set initial image previews from existing data if available
         if (especeData.image_1 && !imageErrors.image_1) {
@@ -69,25 +82,51 @@ const Contribution = () => {
           setImagePreview3(optimizeCloudinaryUrl(especeData.image_3));
         }
       })
-      .catch((error) => console.error("Error fetching espece:", error));
+      .catch((error) => {
+        logger.error("Failed to load species data for contribution", {
+          species_id: id_espece,
+          error: error.message,
+          status: error.response?.status,
+          user_id: actualUser?.userId,
+        });
+        console.error("Error fetching espece:", error);
+      });
 
     // Fetch temperaments
     axios
       .get(`${API_URL}/temperament/read`)
       .then((response) => setTemperaments(response.data.temperaments))
-      .catch((error) => console.error("Error fetching temperaments:", error));
+      .catch((error) => {
+        logger.error("Failed to load temperaments for contribution", {
+          error: error.message,
+          user_id: actualUser?.userId,
+        });
+        console.error("Error fetching temperaments:", error);
+      });
 
     // Fetch familles
     axios
       .get(`${API_URL}/famille/read`)
       .then((response) => setfamilles(response.data.familles))
-      .catch((error) => console.error("Error fetching familles:", error));
+      .catch((error) => {
+        logger.error("Failed to load families for contribution", {
+          error: error.message,
+          user_id: actualUser?.userId,
+        });
+        console.error("Error fetching familles:", error);
+      });
 
     // Fetch habitats
     axios
       .get(`${API_URL}/habitat/read`)
       .then((response) => setHabitats(response.data.habitats))
-      .catch((error) => console.error("Error fetching habitats:", error));
+      .catch((error) => {
+        logger.error("Failed to load habitats for contribution", {
+          error: error.message,
+          user_id: actualUser?.userId,
+        });
+        console.error("Error fetching habitats:", error);
+      });
   }, [id_espece]);
 
   const handleInputChange = (e) => {
@@ -101,6 +140,14 @@ const Contribution = () => {
   const handleImageChange = (e, setPreview, imageKey) => {
     const file = e.target.files[0];
     if (file) {
+      logger.debug("User selecting image for contribution", {
+        species_id: id_espece,
+        image_key: imageKey,
+        file_name: file.name,
+        file_size: file.size,
+        user_id: actualUser?.userId,
+      });
+
       // Reset error for this image
       setImageErrors((prev) => ({
         ...prev,
@@ -123,10 +170,25 @@ const Contribution = () => {
       !actualUser ||
       (actualUser.role !== "user" && actualUser.role !== "admin")
     ) {
+      logger.warn("Unauthorized attempt to create contribution", {
+        species_id: id_espece,
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       toast.error("Vous ne disposez pas des droits pour cette contribution");
       navigate("/home");
       return;
     }
+
+    logger.info("User submitting contribution", {
+      species_id: id_espece,
+      species_name: espece.nom_commun,
+      user_id: actualUser.userId,
+      has_image1: !!e.target.image_1.files[0],
+      has_image2: !!e.target.image_2.files[0],
+      has_image3: !!e.target.image_3.files[0],
+    });
 
     const API_URL = import.meta.env.VITE_API_URL;
     const formData = new FormData();
@@ -176,6 +238,14 @@ const Contribution = () => {
 
       // CORRECTION : Vérifier le bon status code (201 au lieu de 200)
       if (response.status === 201) {
+        logger.info("Contribution created successfully by user", {
+          species_id: id_espece,
+          species_name: espece.nom_commun,
+          contribution_id: response.data?.id_contribution,
+          user_id: actualUser.userId,
+          awaiting_validation: true,
+        });
+
         toast.success(
           "Contribution effectuée avec succès ! Elle sera examinée par nos modérateurs."
         );
@@ -184,6 +254,14 @@ const Contribution = () => {
         }, 3000);
       }
     } catch (error) {
+      logger.error("Failed to create contribution", {
+        species_id: id_espece,
+        species_name: espece.nom_commun,
+        error: error.response?.data?.message || error.message,
+        status: error.response?.status,
+        user_id: actualUser.userId,
+      });
+
       console.error("Contribution error:", error);
       const errorMessage =
         error.response?.data?.message || "Une erreur s'est produite";

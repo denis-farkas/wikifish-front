@@ -1,12 +1,17 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { logger } from "../../services/logger.service.js";
 import "./backCommentaire.css";
 
 const BackCommentaire = () => {
   const [commentaires, setCommentaires] = useState(null);
-  console.log(commentaires);
+
   useEffect(() => {
+    logger.info(
+      "BackCommentaire component mounted - Admin accessing comments management"
+    );
+
     let data;
 
     let config = {
@@ -23,11 +28,29 @@ const BackCommentaire = () => {
       .request(config)
       .then((response) => {
         setCommentaires(response.data.commentaires);
+        logger.info("Comments loaded successfully for admin", {
+          count: response.data.commentaires?.length || 0,
+        });
       })
       .catch((error) => {
+        logger.error("Failed to load comments for admin", {
+          error: error.message,
+          status: error.response?.status,
+          url: config.url,
+        });
         console.log(error);
       });
   }, []);
+
+  const handleEditClick = (commentaireId) => {
+    logger.info("Admin navigating to edit comment", {
+      comment_id: commentaireId,
+    });
+  };
+
+  const handleBackToOffice = () => {
+    logger.info("Admin returning to back office from comments management");
+  };
 
   return (
     <div className="main">
@@ -65,6 +88,7 @@ const BackCommentaire = () => {
                     to={`/backCommentaire/update/${commentaire.id_commentaire}`}
                     className="btn btn-primary"
                     aria-label="Editer les commentaires"
+                    onClick={() => handleEditClick(commentaire.id_commentaire)}
                   >
                     Editer
                   </Link>
@@ -85,6 +109,7 @@ const BackCommentaire = () => {
         to={"/backOffice"}
         className="btn btn-secondary my-4 mx-auto"
         aria-label="Retour à la page d'accueil de l'administration"
+        onClick={handleBackToOffice}
       >
         Retour à l'accueil
       </Link>

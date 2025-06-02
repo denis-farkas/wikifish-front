@@ -44,6 +44,8 @@ import SearchResults from "./pages/searchResults";
 import SearchHistory from "./pages/searchHistory";
 import ProtectedRoute from "./components/protectedRoute";
 
+import BackLogs from "./pages/backLogs";
+
 function App() {
   return (
     <Router>
@@ -92,6 +94,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <BackOffice />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/backLogs"
+                element={
+                  <ProtectedRoute>
+                    <BackLogs />
                   </ProtectedRoute>
                 }
               />

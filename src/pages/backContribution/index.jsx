@@ -1,12 +1,17 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { logger } from "../../services/logger.service.js";
 import "./backContribution.css";
 
 const BackContribution = () => {
   const [contributions, setContributions] = useState(null);
-  console.log(contributions);
+
   useEffect(() => {
+    logger.info(
+      "BackContribution component mounted - Admin accessing contributions management"
+    );
+
     let data;
 
     let config = {
@@ -23,11 +28,29 @@ const BackContribution = () => {
       .request(config)
       .then((response) => {
         setContributions(response.data.contributions);
+        logger.info("Contributions loaded successfully for admin", {
+          count: response.data.contributions?.length || 0,
+        });
       })
       .catch((error) => {
+        logger.error("Failed to load contributions for admin", {
+          error: error.message,
+          status: error.response?.status,
+          url: config.url,
+        });
         console.log(error);
       });
   }, []);
+
+  const handleValidateClick = (contributionId) => {
+    logger.info("Admin navigating to validate contribution", {
+      contribution_id: contributionId,
+    });
+  };
+
+  const handleBackToOffice = () => {
+    logger.info("Admin returning to back office from contributions management");
+  };
 
   return (
     <div className="main">
@@ -70,6 +93,9 @@ const BackContribution = () => {
                     to={`/backContribution/validate/${contribution.id_contribution}`}
                     className="btn btn-primary"
                     aria-label="Valider la contribution"
+                    onClick={() =>
+                      handleValidateClick(contribution.id_contribution)
+                    }
                   >
                     Valider
                   </Link>
@@ -79,7 +105,7 @@ const BackContribution = () => {
 
           {contributions && !contributions.length && (
             <tr>
-              <td>
+              <td colSpan="5">
                 <p>Pas de contribution à afficher</p>
               </td>
             </tr>
@@ -90,6 +116,7 @@ const BackContribution = () => {
         to={"/backOffice"}
         className="btn btn-secondary my-4 mx-auto"
         aria-label="Retour à la page d'accueil de l'administration"
+        onClick={handleBackToOffice}
       >
         Retour à l'accueil
       </Link>

@@ -47,6 +47,10 @@ const BackOffice = () => {
         >
           <button className="button back">Gestion des commentaires</button>
         </Link>
+
+        <Link to={"/backLogs"} aria-label="Accéder à la consultation des logs">
+          <button className="button back">Consultation des logs</button>
+        </Link>
       </div>
     </div>
   );

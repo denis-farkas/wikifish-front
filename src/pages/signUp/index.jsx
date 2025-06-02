@@ -3,16 +3,14 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "./signUp.css";
-import { userService } from "../../utils/userService";
 
 const SignUp = () => {
-  //const { firstName, lastName, birthday, address, postCode, city, phoneNumber, danceLevel, email, password, role } = req.body;
   const [pseudo, setPseudo] = useState("");
   const [email, setEmail] = useState("");
   const [mdp, setMdp] = useState("");
   const role = "user";
   const VITE_API_URL = import.meta.env.VITE_API_URL;
-  const { signedUp } = userService;
+
   let navigate = useNavigate();
 
   const handleSubmit = (e) => {
@@ -44,7 +42,7 @@ const SignUp = () => {
           setPseudo("");
           setEmail("");
           setMdp("");
-          signedUp();
+
           toast.success("Inscription validée");
           setTimeout(() => {
             navigate("/signIn");

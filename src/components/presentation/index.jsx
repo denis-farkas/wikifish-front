@@ -1,9 +1,22 @@
 import "./presentation.css";
 import { userService } from "../../utils/userService";
+import { useState, useEffect } from "react";
 
 const Presentation = () => {
-  const isSignedUp = userService.isSignedUp();
-  const user = userService.userValue;
+  const [user, setUser] = useState(userService.userValue);
+
+  useEffect(() => {
+    // S'abonner aux changements d'état utilisateur
+    const subscription = userService.user.subscribe((x) => {
+      setUser(x);
+    });
+
+    // Nettoyer l'abonnement au démontage du composant
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const isConnected = user && user.pseudo && user.token;
+
   return (
     <section className="presentation container">
       <div className="left">
@@ -21,15 +34,11 @@ const Presentation = () => {
           questions et contribuer à l'enrichissement de notre encyclopédie
           aquatique.
         </p>
-        {user && user.pseudo ? (
+        {isConnected ? (
           <p className="blue-hello">
             Bonjour <span className="green-hello">{user.pseudo}</span>,
             Bienvenue.
           </p>
-        ) : isSignedUp ? (
-          <a href="/signIn" className="text-white text-decoration-none">
-            <button className="btn btn-success">Connexion</button>
-          </a>
         ) : (
           <a href="/signUp" className="text-white text-decoration-none">
             <button className="btn btn-success">Inscription</button>

@@ -9,13 +9,6 @@ function login(user) {
   // Convertion d'une variable javascript en string JSON
   localStorage.setItem("user", JSON.stringify(user));
 }
-function signedUp() {
-  localStorage.setItem("isSignedUp", "true");
-}
-// Fonction pour vérifier si l'utilisateur est inscrit
-function isSignedUp() {
-  return localStorage.getItem("isSignedUp") === "true";
-}
 // Variable pour stocker la fonction de navigation
 let navigateFunction;
 // Fonction pour définir la fonction de navigation
@@ -44,6 +37,4 @@ export const userService = {
   logout,
   setNavigate,
   update,
-  signedUp,
-  isSignedUp,
 };

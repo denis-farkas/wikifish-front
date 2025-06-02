@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
+import { logger } from "../../../services/logger.service.js";
 
 const BackCommentaireUpdate = () => {
   const { id_commentaire } = useParams();
@@ -12,6 +13,11 @@ const BackCommentaireUpdate = () => {
   const [commentaire, setCommentaire] = useState();
 
   useEffect(() => {
+    logger.info("BackCommentaireUpdate component mounted", {
+      comment_id: id_commentaire,
+      admin_id: actualUser?.userId,
+    });
+
     let config = {
       method: "get",
       maxBodyLength: Infinity,
@@ -20,13 +26,22 @@ const BackCommentaireUpdate = () => {
         "Content-Type": "application/json",
       },
     };
+
     axios
       .request(config)
       .then((response) => {
-        console.log(response);
         setCommentaire(response.data.commentaire);
+        logger.info("Comment loaded for admin editing", {
+          comment_id: id_commentaire,
+          current_validation: response.data.commentaire?.validation,
+        });
       })
       .catch((error) => {
+        logger.error("Failed to load comment for admin editing", {
+          comment_id: id_commentaire,
+          error: error.message,
+          status: error.response?.status,
+        });
         console.log(error);
       });
   }, [id_commentaire]);
@@ -34,16 +49,31 @@ const BackCommentaireUpdate = () => {
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "validation") {
+      logger.debug("Admin changing comment validation status", {
+        comment_id: id_commentaire,
+        old_value: commentaire?.validation,
+        new_value: value,
+      });
+    }
+
     setCommentaire((prevData) => ({
       ...prevData,
       [name]: value,
     }));
-    console.log(commentaire);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (actualUser !== undefined && actualUser.role === "admin") {
+      logger.info("Admin starting comment validation update", {
+        comment_id: id_commentaire,
+        new_validation: commentaire.validation,
+        admin_id: actualUser.userId,
+      });
+
       const API_URL = import.meta.env.VITE_API_URL;
 
       let data = {
@@ -66,8 +96,13 @@ const BackCommentaireUpdate = () => {
       axios
         .request(config)
         .then((response) => {
-          console.log(response);
           if (response.status === 200) {
+            logger.info("Comment validation updated successfully by admin", {
+              comment_id: id_commentaire,
+              validation_status: commentaire.validation,
+              admin_id: actualUser.userId,
+            });
+
             toast.success("Modification validée");
             setTimeout(() => {
               navigate("/backCommentaire");
@@ -78,9 +113,23 @@ const BackCommentaireUpdate = () => {
           const errorMessage = error.response
             ? error.response.data.message || "An error occurred"
             : "An error occurred";
+
+          logger.error("Failed to update comment validation", {
+            comment_id: id_commentaire,
+            error: errorMessage,
+            status: error.response?.status,
+            admin_id: actualUser.userId,
+          });
+
           toast.error(errorMessage);
         });
     } else {
+      logger.warn("Unauthorized attempt to modify comment validation", {
+        comment_id: id_commentaire,
+        user_role: actualUser?.role,
+        user_id: actualUser?.userId,
+      });
+
       const errorMessage =
         "Vous ne disposez pas des droits pour cette modification";
       toast.error(errorMessage);

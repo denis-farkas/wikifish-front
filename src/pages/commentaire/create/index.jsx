@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import { generateDateTime } from "../../../utils/generateDate";
+import { logger } from "../../../services/logger.service.js";
 
 const CommentaireCreate = () => {
   const { id_espece } = useParams();
@@ -10,7 +11,12 @@ const CommentaireCreate = () => {
   const navigate = useNavigate();
 
   const [commentaire, setCommentaire] = useState();
-  const [isSubmitting, setIsSubmitting] = useState(false); // État pour empêcher les soumissions multiples
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  logger.info("CommentaireCreate component mounted - User writing comment", {
+    species_id: id_espece,
+    user_id: actualUser?.userId,
+  });
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -19,7 +25,14 @@ const CommentaireCreate = () => {
       ...prevData,
       [name]: value,
     }));
-    console.log(commentaire);
+
+    if (name === "note") {
+      logger.debug("User rating species", {
+        species_id: id_espece,
+        rating: value,
+        user_id: actualUser?.userId,
+      });
+    }
   };
 
   const handleSubmit = (e) => {
@@ -32,7 +45,14 @@ const CommentaireCreate = () => {
     }
 
     if (actualUser !== undefined) {
-      setIsSubmitting(true); // Désactive le bouton et empêche les soumissions multiples
+      logger.info("User submitting comment for species", {
+        species_id: id_espece,
+        rating: commentaire.note,
+        comment_length: commentaire.commentaire?.length || 0,
+        user_id: actualUser.userId,
+      });
+
+      setIsSubmitting(true);
 
       const API_URL = import.meta.env.VITE_API_URL;
       let data = {
@@ -58,11 +78,18 @@ const CommentaireCreate = () => {
       axios
         .request(config)
         .then((response) => {
-          console.log(response);
           if (response.status === 201) {
+            logger.info("Comment created successfully by user", {
+              species_id: id_espece,
+              comment_id: response.data?.id_commentaire,
+              rating: commentaire.note,
+              user_id: actualUser.userId,
+              awaiting_validation: true,
+            });
+
             toast.success("Création effectuée avec succès");
             setTimeout(() => {
-              navigate("/espece/readOne/" + id_espece); // Correction: utiliser id_espece au lieu de commentaire.id_espece
+              navigate("/espece/readOne/" + id_espece);
             }, 3000);
           }
         })
@@ -70,12 +97,28 @@ const CommentaireCreate = () => {
           const errorMessage = error.response
             ? error.response.data.message || "An error occurred"
             : "An error occurred";
+
+          logger.error("Failed to create comment", {
+            species_id: id_espece,
+            rating: commentaire.note,
+            error: errorMessage,
+            status: error.response?.status,
+            user_id: actualUser.userId,
+          });
+
           toast.error(errorMessage);
         })
         .finally(() => {
-          setIsSubmitting(false); // Réactive le bouton après la réponse
+          setIsSubmitting(false);
         });
     } else {
+      logger.warn(
+        "Unauthorized attempt to create comment - User not logged in",
+        {
+          species_id: id_espece,
+        }
+      );
+
       const errorMessage =
         "Vous ne disposez pas des droits pour cet ajout, Veuillez vous connecter";
       toast.error(errorMessage);
@@ -102,7 +145,7 @@ const CommentaireCreate = () => {
                   value={value}
                   onChange={handleInputChange}
                   required
-                  disabled={isSubmitting} // Désactive les inputs pendant la soumission
+                  disabled={isSubmitting}
                 />
                 <label className="form-check-label" htmlFor={`note${value}`}>
                   {value}
@@ -122,7 +165,7 @@ const CommentaireCreate = () => {
               placeholder="Écrivez votre commentaire ici"
               value={commentaire?.commentaire || ""}
               onChange={handleInputChange}
-              disabled={isSubmitting} // Désactive le textarea pendant la soumission
+              disabled={isSubmitting}
               required
             />
           </div>
@@ -131,7 +174,7 @@ const CommentaireCreate = () => {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={isSubmitting} // Désactive le bouton pendant la soumission
+            disabled={isSubmitting}
           >
             {isSubmitting ? "Création en cours..." : "Créer"}
           </button>
