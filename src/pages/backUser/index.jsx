@@ -35,7 +35,7 @@ const BackUser = () => {
         <thead>
           <tr>
             <th
-              style={{ width: "5%" }}
+              style={{ width: "10%" }}
               aria-label="Identifiant de l'utilisateur"
             >
               Id
@@ -47,8 +47,8 @@ const BackUser = () => {
             <th style={{ width: "30%" }} aria-label="Email de l'utilisateur">
               Email
             </th>
-            <th style={{ width: "30%" }} aria-label="Actions">
-              Action
+            <th style={{ width: "30%" }} aria-label="Rôle de l'utilisateur">
+              Rôle
             </th>
           </tr>
         </thead>
@@ -59,15 +59,7 @@ const BackUser = () => {
                 <td>{user.user_id}</td>
                 <td>{user.pseudo}</td>
                 <td>{user.email}</td>
-                <td>
-                  <Link
-                    to={`/userProfile/readOne/${user.user_id}`}
-                    className="btn btn-primary"
-                    aria-label="Editer les utilisateurs"
-                  >
-                    Editer
-                  </Link>
-                </td>
+                <td>{user.role}</td>
               </tr>
             ))}
 
