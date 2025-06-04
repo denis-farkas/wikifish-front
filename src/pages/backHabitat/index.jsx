@@ -7,6 +7,7 @@ import "./backHabitat.css";
 
 const BackHabitat = () => {
   const [habitats, setHabitats] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     logger.info(
@@ -18,7 +19,7 @@ const BackHabitat = () => {
     let config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: "http://localhost:3009/habitat/read",
+      url: `${API_URL}/habitat/read`,
       headers: {
         "Content-Type": "application/json",
       },
@@ -63,7 +64,6 @@ const BackHabitat = () => {
         admin_id: actualUser.userId,
       });
 
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3009";
       const token = actualUser.token;
 
       let config = {

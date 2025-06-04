@@ -8,13 +8,15 @@ const UserContributions = () => {
   console.log(contributions);
   let actualUser = JSON.parse(localStorage.getItem("user"));
   const userId = actualUser.userId;
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     let data;
 
     let config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: `http://localhost:3009/contribution/read/user/${userId}`,
+      url: `${API_URL}/contribution/read/user/${userId}`,
       headers: {
         "Content-Type": "application/json",
       },

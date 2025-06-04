@@ -7,6 +7,7 @@ import "./backTemperament.css";
 
 const BackTemperament = () => {
   const [temperaments, setTemperaments] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     logger.info(
@@ -18,7 +19,7 @@ const BackTemperament = () => {
     let config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: "http://localhost:3009/temperament/read",
+      url: `${API_URL}/temperament/read`,
       headers: {
         "Content-Type": "application/json",
       },
@@ -63,7 +64,7 @@ const BackTemperament = () => {
         admin_id: actualUser.userId,
       });
 
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3009";
+      const API_URL = import.meta.env.VITE_API_URL;
       const token = actualUser.token;
 
       let config = {

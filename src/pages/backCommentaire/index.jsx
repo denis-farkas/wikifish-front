@@ -6,6 +6,7 @@ import "./backCommentaire.css";
 
 const BackCommentaire = () => {
   const [commentaires, setCommentaires] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     logger.info(
@@ -17,7 +18,7 @@ const BackCommentaire = () => {
     let config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: "http://localhost:3009/commentaire/read",
+      url: `${API_URL}/commentaire/read`,
       headers: {
         "Content-Type": "application/json",
       },

@@ -1,0 +1,47 @@
+# HTTPS server block
+server {
+    listen 443 ssl; # Listen on HTTPS
+    server_name wikifish.horizonduweb.fr www.wikifish.horizonduweb.fr;
+
+    root /var/www/wikifish.horizonduweb.fr/dist; # Path to the 'dist' folder created by Vite build
+    index index.html;
+
+    # Handle React routes (SPA)
+    location / {
+        try_files $uri /index.html;
+    }
+
+    # Serve static files
+    location ~* \.(?:ico|css|js|gif|jpe?g|png|woff2?|eot|ttf|svg|webp|json)$ {
+        expires 6M;
+        access_log off;
+        add_header Cache-Control "public";
+    }
+
+    # Gzip compression for better performance
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    gzip_min_length 256;
+
+    # Error handling
+    error_page 404 /index.html;
+
+    # Logging
+    access_log /var/log/nginx/wikifish_access.log;
+    error_log /var/log/nginx/wikifish_error.log;
+
+    # SSL configuration (managed by Certbot)
+    ssl_certificate /etc/letsencrypt/live/wikifish.horizonduweb.fr/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/wikifish.horizonduweb.fr/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+# HTTP to HTTPS redirection
+server {
+    listen 80; # Listen on HTTP
+    server_name wikifish.horizonduweb.fr www.wikifish.horizonduweb.fr;
+
+    # Redirect all HTTP traffic to HTTPS
+    return 301 https://wikifish.horizonduweb.fr$request_uri;
+}

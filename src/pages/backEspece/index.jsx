@@ -6,6 +6,7 @@ import "./backEspece.css";
 
 const BackEspece = () => {
   const [especes, setEspeces] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     logger.info(
@@ -17,7 +18,7 @@ const BackEspece = () => {
     let config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: "http://localhost:3009/espece/read",
+      url: `${API_URL}/espece/read`,
       headers: {
         "Content-Type": "application/json",
       },

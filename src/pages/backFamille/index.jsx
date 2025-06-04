@@ -7,6 +7,7 @@ import { logger } from "../../services/logger.service.js";
 
 const BackFamille = () => {
   const [familles, setFamilles] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     logger.info(
@@ -18,7 +19,7 @@ const BackFamille = () => {
     let config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: "http://localhost:3009/famille/read",
+      url: `${API_URL}/famille/read`,
       headers: {
         "Content-Type": "application/json",
       },
@@ -63,7 +64,7 @@ const BackFamille = () => {
         admin_id: actualUser.userId,
       });
 
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3009";
+      const API_URL = import.meta.env.VITE_API_URL;
       const token = actualUser.token;
 
       let config = {

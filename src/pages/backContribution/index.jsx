@@ -6,6 +6,7 @@ import "./backContribution.css";
 
 const BackContribution = () => {
   const [contributions, setContributions] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     logger.info(
@@ -17,7 +18,7 @@ const BackContribution = () => {
     let config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: "http://localhost:3009/contribution/read",
+      url: `${API_URL}/contribution/read`,
       headers: {
         "Content-Type": "application/json",
       },

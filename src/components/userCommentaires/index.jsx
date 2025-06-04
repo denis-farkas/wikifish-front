@@ -6,15 +6,17 @@ import { formatDateTime } from "../../utils/generateDate";
 const UserCommentaires = () => {
   const [commentaires, setCommentaires] = useState(null);
   console.log(commentaires);
+  const API_URL = import.meta.env.VITE_API_URL;
   let actualUser = JSON.parse(localStorage.getItem("user"));
   const userId = actualUser.userId;
+
   useEffect(() => {
     let data;
 
     let config = {
       method: "get",
       maxBodyLength: Infinity,
-      url: `http://localhost:3009/commentaire/readByUser/${userId}`,
+      url: `${API_URL}/commentaire/readByUser/${userId}`,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${actualUser.token}`,
